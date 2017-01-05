@@ -1,0 +1,76 @@
+#! /bin/bash
+
+if [ $# -lt 1 ]
+then
+    echo "usage: $0 data"
+    exit
+fi
+
+#BIN=/0/home/shang.34/bin/src_l1c2l2/l1c2l2.exe
+#BIN=/0/home/shang.34/NEWL1C/newcode/L2new/src_l1c2l2/l1c2l2.exe
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+
+
+AAM=$INPUTdata/GIF48.GEO
+AAMTAB=
+
+#days=31
+
+
+export OMP_NUM_THREADS=30
+
+EXE=$INPUTexe/l1c2l2.e
+
+PARAM1=stdin
+
+cat << PARAMEND1 > $PARAM1
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+AAM       $AAM  $AAMTAB
+NMAX      60 60
+DT        5
+#EMPR      5 2 5400 
+EMPR      0 0 5400 
+SOLVE     1
+FIX       0  0  0 0
+FIX       1  0  0 0 
+FIX       1  1  0 0
+#FIX       2  0  -4.8416938905481E-04  0 
+#STK        2  0  1e20 0
+#STK        3  0  1e20 0
+#STK        3  3  1e20 1e20
+FCT_P     0
+#FCT_B     10 60
+FCT_B     0 0
+FCT_N     0
+FCT_R     0
+PWEIGHT   1
+PARAMEND1
+
+
+#time $BIN $PARAM1 
+time $EXE $PARAM1 $1
+
+#exit
+#rm $PARAM1
+
+mv COEF.txt $1.L2
+mv adj.txt $1.L2.adj
+
+#coef2grid 60 $1.L2 grid 0
+coef2psd  60 $1.L2 $1.L2.psd
+coef2fltgrid 60 $1.L2 0 0
+#plot1geoid grid $1.L2 >& out
+#rm grid out
+
+exit

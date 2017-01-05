@@ -1,0 +1,68 @@
+#! /bin/bash
+
+if [ $# -lt 3 ]
+then
+  echo "usage: $0 year month day"
+  exit
+fi
+
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+
+
+year=$1; month=$2; day=$3
+
+
+###############################################
+
+
+
+INPUTexeACC=$INPUTexe/editacc.e
+INPUTexeSCA=$INPUTexe/editsca.e
+
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+
+
+
+epoch=$year-$month-$day
+
+
+ACCAold=ACC1B_"$epoch"_A_02.asc
+ACCAnew=ACC02_"$epoch"_A.asc
+SCAAold=SCA1B_"$epoch"_A_02.asc
+SCAAnew=SCA02_"$epoch"_A.asc
+
+
+ACCBold=ACC1B_"$epoch"_B_02.asc
+ACCBnew=ACC02_"$epoch"_B.asc
+SCABold=SCA1B_"$epoch"_B_02.asc
+SCABnew=SCA02_"$epoch"_B.asc
+
+$INPUTexeACC $ACCAold $ACCAnew
+$INPUTexeACC $ACCBold $ACCBnew
+
+$INPUTexeSCA $SCAAold $SCAAnew
+$INPUTexeSCA $SCABold $SCABnew
+
+
+KBRold=KBR1B_"$epoch"_X_02.asc
+KBRnew=KBR02_"$epoch"_X.asc
+
+cp -f $KBRold $KBRnew
+
+exit
+

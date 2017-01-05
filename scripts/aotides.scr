@@ -1,0 +1,82 @@
+#! /bin/bash
+
+if [ $# -lt 3 ]
+then
+  echo "usage: $0 year month day"
+  exit
+fi
+
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+
+
+
+year=$1; month=$2; day=$3
+
+
+##################################################
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+epoch=$year-$month-$day
+
+
+OTS=EOT11
+minortide=1
+
+case "$month" in
+01 | 02 | 11 | 12) AT=D ;;
+03 | 04 | 09 | 10) AT=E ;;
+05 | 06 | 07 | 08) AT=J ;;
+esac
+
+FLOTS=$INPUTdata/aotides/otides/model/"$OTS"_LP.gfc
+FLOPT=$INPUTdata/aotides/optide/model/OPT.gfc
+FLAT1=$INPUTdata/aotides/atides/model/AT_S1."$AT".gfc
+FLAT2=$INPUTdata/aotides/atides/model/AT_S2."$AT".gfc
+FLADM=$INPUTdata/admittance.linear.txt
+FLEOP=$INPUTdata/eopc04_08_IAU2000.62-now
+FLAOD=AOD02_$epoch.asc
+
+FLOUT=AOT02_$epoch.bin
+
+
+EXE=$INPUTexe/aotides.e
+
+PARAM=stdin
+
+cat << PARAMEND1 > $PARAM
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+EPOCH     $year $month $day
+STEP      60
+NMAX      100
+OTIDE     $FLOTS 100 
+MINOR     $minortide $FLADM
+ATIDE     $FLAT1 10 $FLAT2 10
+AOD1B     $FLAOD 100 
+PTIDE     $FLOPT 100
+EOP       $FLEOP
+OUTPUT    $FLOUT
+PARAMEND1
+
+$EXE $PARAM
+rm $PARAM
+rm aoteph.dat
+
+

@@ -1,0 +1,128 @@
+#! /bin/bash
+
+if [ $# -lt 2 ]
+then
+    echo "usage: $0 year month day OR $0 year doy"
+    exit
+fi
+
+
+year=$1
+
+if [ $# -eq 2 ]
+then
+    doy=$2
+    ymd=`doy $year $doy | grep 'DOY' | cut -d ' ' -f 2`
+    month=`echo $ymd | cut -d '/' -f 2`
+    day=`echo $ymd | cut -d '/' -f 3`
+    epoch=$year-$doy
+fi
+
+if [ $# -eq 3 ]
+then
+    month=$2
+    day=$3
+    doy=`doy $year $month $day | grep 'DOY' | cut -b 32-34`
+    if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+    fi
+    if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+    fi
+    epoch=$year-$month-$day
+fi
+
+span=364
+
+nc=0.05
+
+data=./results
+
+#doys=`expr $doy - $span`
+doys=`expr $doy`
+doye=`expr $doy + $span`
+
+#doys=`echo $doy-$span | bc`
+#doye=`echo $doy+$span | bc`
+#let "doys = $doy - $span"
+#let "doye = $doy + $span"
+
+#echo $doy $doys $doye
+
+#ymd=`doy $year $doy | grep 'DOY' | cut -d ' ' -f 2`
+
+#y=`echo $ymd | cut -d '/' -f 1`
+#m=`echo $ymd | cut -d '/' -f 2`
+#d=`echo $ymd | cut -d '/' -f 3`
+
+#echo $y $m $d
+
+#exit
+
+#rm -f $epoch.l1c
+rm -f $year.l1c
+
+
+n=1
+
+doyi=$doys
+while [ $doyi -le $doye ]
+do
+    ymd=`doy $year $doyi | grep 'DOY' | cut -d ' ' -f 2`
+    y=`echo $ymd | cut -d '/' -f 1`
+    m=`echo $ymd | cut -d '/' -f 2`
+    d=`echo $ymd | cut -d '/' -f 3`
+
+    e=$y-$m-$d
+
+    let "doyi +=1"
+
+    rmsa=999
+    rmsb=999
+
+    if [ ! -f "$data/$e/$e.rms.log" ];
+    then
+#        echo "file $e doesn't exist!"
+        printf "skip %s %20.5f %20.5f\n" $e $rmsa $rmsb 
+        continue
+    fi
+
+    rmsa=`grep 'A' $data/$e/$e.rms.log | awk '{print $4}' `
+    rmsb=`grep 'B' $data/$e/$e.rms.log | awk '{print $4}' `
+
+#        echo "$e $rmsa $rmsb" 
+
+    if [ -z "$rmsa" ]; then rmsa=999; fi
+    if [ -z "$rmsb" ]; then rmsb=999; fi
+
+#    if [ -z "$rmsa" ] || [ -z "$rmsb" ]
+#    then 
+#        printf "skip %s %10.5f %10.5f\n" $e $rmsa $rmsb 
+#        continue
+#    fi
+
+
+    if [ `echo "$rmsa > $nc"|bc` -eq 1 ] || [ `echo "$rmsb > $nc"|bc` -eq 1 ]
+    then
+#        echo "skip $e rmsA = $rmsa rmsB = $rmsb" 
+        printf "skip %s %20.5f %20.5f\n" $e $rmsa $rmsb 
+        continue
+    fi
+        
+#    cat $data/$e/$e.l1c >> $epoch.l1c
+    cat $data/$e/$e.l1c >> $year.l1c
+
+    let "n +=1"
+#    printf "cat  %s %10.5f %10.5f\n" $e $rmsa $rmsb 
+
+done
+
+echo
+echo "number of days: $n"
+echo
+
+#n=`expr $y - 2002`
+#ln -s $epoch.l1c year.$n
+
+exit
+

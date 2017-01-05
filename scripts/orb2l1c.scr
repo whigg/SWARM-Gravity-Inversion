@@ -1,0 +1,163 @@
+#! /bin/bash
+
+if [ $# -lt 9 ]
+then
+    echo "usage: $0 year month day FIT/DYN/GPS 0/1(KBRoff/on) NO_bias DT_bias NO_scale DT_scale"
+    exit
+fi
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+if [ ! $INPUTbin ]; then
+    export INPUTbin=$DIR/scripts
+fi
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+
+year=$1; month=$2; day=$3
+
+#################################################
+
+INPUT=$INPUTdata
+DATA=.
+
+GRV=$INPUT/GIF48.GEO
+#GRV=$INPUT/EGM2008_to2190_ZeroTide
+GRVTAB=
+
+export OMP_NUM_THREADS=1
+
+agency=$4
+kbr=$5
+bias=$6
+dt_bias=$7
+scale=$8
+dt_scale=$9
+
+
+vl2m=05
+
+dt=5
+
+if [ `expr length $month` -eq 1 ]
+    then  month=0$month
+fi
+
+if [ `expr length $day` -eq 1 ]
+    then  day=0$day
+fi
+
+epoch=$year-$month-$day
+epoch_A="$epoch"_A
+epoch_B="$epoch"_B
+epoch_X="$epoch"_X
+ORB02="$agency"02_
+#ORB02="$agency"01_
+
+
+case "$kbr" in
+0) label=$epoch-$agency-KBRoff ;;
+1) label=$epoch-$agency-KBRon ;;
+esac
+
+
+L2MTAB=GRCOF2
+
+
+
+
+#
+# ------------------------------------------------------------
+#
+
+EXE=$INPUTexe/orb2l1c.e
+
+PARAM1=stdin
+
+cat << PARAMEND1 > $PARAM1
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+  Everybody Can Have Orbit: Global Set Option Cards                             
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+GNV1C     $DATA/$ORB02$epoch_A.asc    $DATA/$ORB02$epoch_B.asc
+PAR1B     $DATA/FIT02_$epoch_A.par    $DATA/FIT02_$epoch_B.par
+ACC1B     $DATA/ACC02_$epoch_A.asc    $DATA/ACC02_$epoch_B.asc
+SCA1B     $DATA/SCA02_$epoch_A.asc    $DATA/SCA02_$epoch_B.asc
+KBR1B     $DATA/KBR02_$epoch_X.asc
+L2MCSR    $DATA/$year-$month-CSR-RL$vl2m  $L2MTAB
+L2MJPL    $DATA/$year-$month-JPL-RL$vl2m  $L2MTAB
+L2MGFZ    $DATA/$year-$month-GFZ-RL$vl2m  $L2MTAB
+GRV       $DATA/$epoch.GEO
+REF       $GRV  $GRVTAB
+EOP       $INPUT/eopc04_08_IAU2000.62-now
+EPH       $INPUT/lnxp1900p2053.421
+AOT       $DATA/AOT02_$epoch.bin 100 60
+#OTIDE     $INPUT/OTIDES.TOPEX_3.0 30 4
+#OTIDE     100 2
+#ATIDE     10 2
+#PTIDE     $INPUT/optide.coef 100
+STIDE     1  -4.173576159e-9 4
+NMAX      60 60
+NCUT      180 180
+YEAR      $year
+MONTH     $month
+DAY       $day
+DAYS      1
+DT        $dt
+KBR       $kbr $kbr
+ACC_BIAS  $bias  $dt_bias
+ACC_SCAL  $scale $dt_scale
+FILTER    2.0   3600
+FITRES    3 2 1 5400
+#FITRES    4 4 1 5400
+DEBUG     0
+PARAMEND1
+
+
+$EXE $PARAM1 > out
+#$EXE $PARAM1
+
+
+mv sim.asc $label.sim
+
+rm stdin out
+
+
+#grep 'iter:  2' FIT*log
+grep 'iter:  2' FIT*log > $epoch.rms.log
+
+
+awk '{if ($23<0.01 && ($10-$16)<0.005 && ($10-$16)>-0.005 && $22 == 0) print}' $label.sim > $label.edt
+
+no_sim=`cat $label.sim | wc -l`
+no_edt=`cat $label.edt | wc -l`
+
+echo $epoch DATA_ACCEPT `echo "scale=3;$no_edt/$no_sim" | bc` > $epoch.edt.log
+echo $epoch DATA_EXCEPT `echo "scale=3;1-$no_edt/$no_sim" | bc`
+
+
+awk '{print $1,$2,$3,$4,$5,$6,$7,$10,$16,$17,$18}' $label.edt > $epoch.l1c
+
+
+exit
+
+
+
+$INPUTbin/plotl1c.scr $epoch.l1c >& out
+
+ln -s $epoch.l1c l1c.asc
+matlab < $INPUTbin/corrl1c.m >& out
+echo $epoch CORRCOEF `cat corr.txt`
+echo $epoch CORRCOEF `cat corr.txt` > $epoch.cor.log
+rm corr.txt l1c.asc out
+
+
+exit
+

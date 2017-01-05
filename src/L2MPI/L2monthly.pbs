@@ -1,0 +1,31 @@
+#
+## Maximum walltime=96:00:00 # Maximum 96 hours; less than 1 hour prior
+#PBS -l walltime=0:20:00
+## set the number of processors and nodes
+## Maximum nodes for oakley PBS -l nodes=170:ppn=12 total 2040 memlim 48
+## Maximum nodes for glenn  PBS -l nodes=256:ppn=8  total 2048 memlim 24
+#PBS -l nodes=1:ppn=12
+##PBS -l nodes=2:ppn=12
+## combine standard error and output
+#PBS -j oe
+## have PBS send email notifications
+#PBS -m bea
+#PBS -M shangkun.85@gmail.com
+#
+
+bin=L2solverNMAp.e
+#bin=L2solverDMAp.e
+nmax=60     #nodes=1:ppn=12
+#nmax=120    #nodes=2:ppn=12
+l1c=2006-05.l1c
+l1cdir=./data/bk/
+
+cd $PBS_O_WORKDIR
+pbsdcp -s $bin $l1cdir/$l1c GIF48.GEO $TMPDIR           
+cd $TMPDIR
+mpiexec $bin $l1c $nmax
+pbsdcp -g '*.L2' $PBS_O_WORKDIR/results/
+ja
+
+exit
+

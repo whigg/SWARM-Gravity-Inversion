@@ -1,0 +1,107 @@
+#!/bin/bash
+
+if [ $# -lt 4 ]
+then
+  echo "usage: $0 year month day fit(0/1)"
+  exit
+fi
+
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+if [ ! $INPUTbin ]; then
+    export INPUTbin=$DIR/scripts
+fi
+
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+if [ ! $GRACEdata ]; then
+    export GRACEdata=/fs/lustre/osu7539/data/
+fi
+
+if [ ! $ORBITdata ]; then
+    export ORBITdata=/fs/lustre/osu7539/L1C_data/results/
+fi
+
+
+
+year=$1; month=$2; day=$3; fit=$4;
+
+#aod=05; ot=eot; minor=1;
+
+bias=3; dt_bias=86400; scale=0; dt_scale=86400
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+epoch=$year-$month-$day
+
+if [ $fit -eq 1 ]; then
+    if [ -d "$epoch" ]; then 
+        echo "Dir $epoch exist!"
+        exit
+    fi
+    mkdir $epoch
+fi
+
+if [ $fit -eq 0 ]; then
+    cp -r $ORBITdata/$epoch .
+    if [ ! -d "$epoch" ]; then
+        echo "Dir $epoch doesn't exist!"
+        exit
+    fi
+#    mkdir $epoch
+fi
+
+cd $epoch
+
+$INPUTbin/getl1b.scr $year $month $day 
+
+if [ $? -ne 0 ]
+    then exit 1
+fi
+
+$INPUTbin/gnv2gps.scr $year $month $day
+$INPUTbin/editl1b.scr $year $month $day
+
+$INPUTbin/getl2slr.scr $year $month CSR 05 1
+$INPUTbin/getl2slr.scr $year $month JPL 05 1
+$INPUTbin/getl2slr.scr $year $month GFZ 05 1
+
+#getgeo.scr $year $month $day
+#getmvf.scr $year $month $day
+$INPUTbin/geteigen.scr $year $month $day
+$INPUTbin/getaod.scr $year $month $day
+$INPUTbin/aotides.scr $year $month $day
+
+
+if [ $fit -eq 1 ]; then
+    $INPUTbin/fitgps.scr $year $month $day A $bias $dt_bias $scale $dt_scale
+    $INPUTbin/fitgps.scr $year $month $day B $bias $dt_bias $scale $dt_scale
+fi
+
+#$INPUTbin/orb2l1c.scr $year $month $day FIT 0 $bias $dt_bias $scale $dt_scale
+$INPUTbin/orb2l1c.scr $year $month $day FIT 1 $bias $dt_bias $scale $dt_scale
+
+#rm AOT*
+rm GNV* GPS* KBR* SCA* ACC* AOD* AOT* *RL05
+
+
+
+exit
+
+
+
+
+

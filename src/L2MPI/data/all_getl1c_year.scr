@@ -1,0 +1,17 @@
+#! /bin/bash
+
+year=2002
+
+while [ $year -le 2013 ]
+do
+    echo $year
+    
+    n=`expr $year - 2001`
+
+    getl1c_year.scr $year 3 10 > year.$n.log
+
+    ln -s $year.l1c year.$n
+
+    let "year +=1"
+
+done

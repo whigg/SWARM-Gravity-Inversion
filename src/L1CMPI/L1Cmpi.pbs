@@ -1,0 +1,27 @@
+#
+## jan 1 2014 - jan 1 2003: 4018 days
+## years=2002;months=4;days=1
+## yeare=2014;monthe=5;daye=31
+## 4444 days: 60nodes*12ppn*6times=4320
+#
+## PBS -l walltime=96:00:00 # Maximum 96 hours; less than 1 hour prior
+#PBS -l walltime=09:59:00
+## set the number of processors and nodes
+## Maximum nodes for oakley PBS -l nodes=170:ppn=12 total 2040 memlim 48
+## Maximum nodes for glenn  PBS -l nodes=256:ppn=8  total 2048 memlim 24
+#PBS -l nodes=26:ppn=12
+## combine standard error and output
+#PBS -j oe
+## have PBS send email notifications
+#PBS -m bea
+#PBS -M shangkun.85@gmail.com
+#
+
+module load matlab
+cd $PBS_O_WORKDIR
+pbsdcp -r '$HOME/my_packages/bin/' '$HOME/my_packages/exe/' '$HOME/my_packages/data/' L1Cmpi $TMPDIR
+cd $TMPDIR
+time mpiexec ./L1Cmpi
+#pbsdcp -g -r '$TMPDIR/2*' $PBS_O_WORKDIR/results/
+pbsdcp -g -r '$TMPDIR/2*' /fs/lustre/osu7539/L1C_results/
+cd $PBS_O_WORKDIR

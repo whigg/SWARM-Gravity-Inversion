@@ -1,0 +1,68 @@
+#! /bin/bash
+
+if [ $# -lt 3 ]
+then
+  echo "usage: $0 year month day"
+  exit
+fi
+
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+
+year=$1; month=$2; day=$3
+nmax=180
+
+
+####################################################
+
+hour=12
+
+grv=$INPUTdata/eigen-6c.gfc
+
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+
+
+epoch=$year-$month-$day
+
+
+geo=$epoch.GEO
+
+
+EXE=$INPUTexe/geteigen.e
+
+PARAM=stdin
+
+cat << PARAMEND1 > $PARAM
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+EPOCH     $year $month $day $hour
+EPOCH0    2005 1 1 0
+NMAX      $nmax   
+INPUT     $grv 
+OUTPUT    $geo
+ZEROTIDE  1
+PARAMEND1
+
+$EXE $PARAM
+rm $PARAM
+
+
+

@@ -1,0 +1,81 @@
+#! /bin/bash
+
+if [ $# -lt 3 ]
+then
+  echo "usage: $0 year month day"
+  exit
+fi
+
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+
+year=$1; month=$2; day=$3
+ver=02
+
+
+
+###############################################
+
+
+if [ `expr length $ver` -eq 1 ]
+        then  ver=0$ver
+fi
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+
+
+case "$ver" in
+01) dt=60 ;;
+02) dt=5 ;;
+esac
+
+
+epoch=$year-$month-$day
+
+DATA=.
+INPUTA=$DATA/GNV1B_"$epoch"_A_"$ver".asc
+INPUTB=$DATA/GNV1B_"$epoch"_B_"$ver".asc
+
+OUTPUTA=$DATA/GPS"$ver"_"$epoch"_A.asc
+OUTPUTB=$DATA/GPS"$ver"_"$epoch"_B.asc
+
+FLEOP=$INPUTdata/eopc04_08_IAU2000.62-now
+
+
+EXE=$INPUTexe/gnv2gps.e
+
+PARAM=stdin
+
+
+cat << PARAMEND1 > $PARAM
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+  Everybody Can Have Orbit: Global Set Option Cards                             
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+EPOCH     $year $month $day
+GNV1B     $INPUTA  $INPUTB
+GNV1C     $OUTPUTA  $OUTPUTB
+EOP       $FLEOP
+DAYS      1
+DT        $dt
+PARAMEND1
+
+$EXE $PARAM
+#time $INPUTexe $PARAM
+rm $PARAM

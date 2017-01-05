@@ -1,0 +1,147 @@
+#! /bin/bash
+
+if [ $# -lt 3 ]
+then
+  echo "usage: $0 year month day"
+  exit
+fi
+
+
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+if [ ! $GRACEdata ]; then
+    export GRACEdata=/0/share/shang.34/data/GRACE
+fi
+
+
+year=$1; month=$2; day=$3
+ver=02
+
+
+
+######################################################
+
+if [ `expr length $ver` -eq 1 ]
+        then  ver=0$ver
+fi
+
+
+dir_l1b=$GRACEdata/L1B/RL$ver
+
+
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+
+epoch=$year-$month-$day
+
+l1bdata=grace_1B_"$epoch"_$ver.tar.gz
+
+l1bfile=$dir_l1b/$year/$l1bdata
+
+if [ ! -f "$l1bfile" ];
+then
+    echo "$l1bdata doesn't exist!"
+    exit 1
+fi
+
+
+
+cp -f $l1bfile .
+
+cp -f $INPUTdata/HeaderText.txt .
+
+gunzip grace_1B_"$epoch"*.tar.gz
+tar -xf grace_1B_"$epoch"*.tar
+
+for file in GNV*.dat ACC*.dat KBR*.dat SCA*.dat
+do
+    fileasc="${file%.*}".asc
+    $INPUTexe/Bin2AsciiLevel1.e -nohead -binfile $file -ascfile $fileasc #>& log
+done
+
+rm HeaderText.txt *.tar *.dat *.rpt 
+
+
+count=`ls -l|grep "^-"|wc -l`
+if [ $count -eq 0 ];
+then
+    echo "$epoch STOP: L1B data don't exist!"
+    exit 2
+fi
+
+count=`cat GNV1B_"$epoch"_A_02.asc | wc -l`
+if [ $count -lt 13000 ];
+then
+    echo "$epoch STOP: GNV1B_"$epoch"_A_02.asc only has $count of 17305 lines !"
+    rm *.asc
+    exit 2
+fi
+
+count=`cat GNV1B_"$epoch"_B_02.asc | wc -l`
+if [ $count -lt 13000 ];
+then
+    echo "$epoch STOP: GNV1B_"$epoch"_B_02.asc only has $count of 17305 lines !"
+    rm *.asc
+    exit 2
+fi
+
+
+count=`cat KBR1B_"$epoch"_X_02.asc | wc -l`
+if [ $count -lt 10000 ];
+then
+    echo "$epoch STOP: KBR1B_"$epoch"_X_02.asc only has $count of 17280 lines !"
+    rm *.asc
+    exit 2
+fi
+
+
+count=`cat SCA1B_"$epoch"_A_02.asc | wc -l`
+if [ $count -lt 13000 ];
+then
+    echo "$epoch STOP: SCA1B_"$epoch"_A_02.asc only has $count of 17280 lines !"
+    rm *.asc
+    exit 2
+fi
+
+count=`cat SCA1B_"$epoch"_B_02.asc | wc -l`
+if [ $count -lt 13000 ];
+then
+    echo "$epoch STOP: SCA1B_"$epoch"_B_02.asc only has $count of 17280 lines !"
+    rm *.asc
+    exit 2
+fi
+
+count=`cat ACC1B_"$epoch"_A_02.asc | wc -l`
+if [ $count -lt 60000 ];
+then
+    echo "$epoch STOP: ACC1B_"$epoch"_A_02.asc only has $count of 86400 lines !"
+    rm *.asc
+    exit 2
+fi
+
+count=`cat ACC1B_"$epoch"_B_02.asc | wc -l`
+if [ $count -lt 60000 ];
+then
+    echo "$epoch STOP: ACC1B_"$epoch"_B_02.asc only has $count of 86400 lines !"
+    rm *.asc
+    exit 2
+fi
+
+
+
+#rm -f -r $dir_tmp
+exit
