@@ -1,0 +1,58 @@
+#! /bin/bash
+
+if [ $# -lt 7 ]
+then
+  echo "usage: $0 year month day dt input_file vel(0/1) output_file"
+  exit
+fi
+
+
+#BIN=/0/home/shang.34/bin/src_gnv2gps/main.orb
+BIN=./src_ncu/main.orb
+
+EOPFILE=/0/home/shang.34/inputs/eopc04_08_IAU2000.62-now
+DATA=.
+
+year=$1
+month=$2
+day=$3
+dt=$4
+
+input=$5
+vel=$6
+output=$7
+
+if [ `expr length $month` -eq 1 ]
+        then  month=0$month
+fi
+
+if [ `expr length $day` -eq 1 ]
+        then  day=0$day
+fi
+
+
+
+#epoch=$year-$month-$day
+
+PARAM=stdin
+
+
+cat << PARAMEND1 > $PARAM
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+  Everybody Can Have Orbit: Global Set Option Cards                             
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
+INPUT     $input
+OUTPUT    $output.itrf $output.icrf
+EOP       $EOPFILE
+YEAR      $year
+MONTH     $month
+DAY       $day
+DAYS      1
+DT        $dt
+VEL       $vel
+ORDER     4
+PARAMEND1
+
+$BIN $PARAM
+#time $BIN $PARAM
+rm $PARAM
