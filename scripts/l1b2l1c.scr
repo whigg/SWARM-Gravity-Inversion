@@ -73,15 +73,13 @@ if [ $? -ne 0 ]
 fi
 
 $INPUTbin/gnv2gps.scr $year $month $day
-$INPUTbin/editl1b.scr $year $month $day
+#$INPUTbin/editl1b.scr $year $month $day
 
 $INPUTbin/getl2slr.scr $year $month CSR 05 1
 $INPUTbin/getl2slr.scr $year $month JPL 05 1
 $INPUTbin/getl2slr.scr $year $month GFZ 05 1
 
-#getgeo.scr $year $month $day
-#getmvf.scr $year $month $day
-$INPUTbin/geteigen.scr $year $month $day
+#$INPUTbin/geteigen.scr $year $month $day
 $INPUTbin/getaod.scr $year $month $day
 $INPUTbin/aotides.scr $year $month $day
 
