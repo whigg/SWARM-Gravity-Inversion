@@ -43,7 +43,7 @@ int main (int argc, char *argv[])
     }
 
     ifstream if_std, if_sp3;
-    ofstream of_gpsi, of_gpse; 
+    ofstream of_pvi, of_pve; 
     if_std.open(argv[1]); 
 //    ostringstream line;
 //    stringstream sline; 
@@ -53,121 +53,85 @@ int main (int argc, char *argv[])
         cout << line;
         istringstream iline(line);
         iline >> card;
-        if (card == "INPUT") {iline >> fsp3; if_sp3.open(fsp3.c_str()); }
-        if (card == "OUTPUT") {iline >> fgpsi >> fgpse; of_gpsi.open(fgpsi.c_str()); of_gpse.open(fgpse.c_str()); }
+        if (card == "INPUT") {iline >> fsp3; if_sp3.open(fsp3.c_str());}
+        if (card == "OUTPUT") {iline >> fgpsi >> fgpse; of_pvi.open(fgpsi.c_str()); of_pve.open(fgpse.c_str()); }
         if (card == "EOP") {iline >> feop;}
         if (card == "EPOCH") {iline >> year >> month >> day; }
     }
     
 
     JD0 = julian_date ((short)year,(short)month,(short)day,0);
-
-//    NDATA = days * 86400 / DT;
+    GPS_S = (int)((JD0 - T0) * 86400 + 0.5);
 
     mjds = (int)(JD0 - 2400000.5);
     mjde = mjds + 1;
     eop_open (feop, mjds - 1, mjde + 1);
 
-
-
-
-
-    GPS_S = (int)((JD0 - T0) * 86400 + 0.5);
-    gps_e = GPS_S + days * 86400;
-
-//    printf ("year = %d\nJD0 = %f\njdgps0 = %f\nGPS_S = %d",
-//        year, JD0, jdgps0, GPS_S);
-
-
-    if (vel == 0) dim = 4;
-    if (vel == 1) dim = 7;
-
-    orb_eph = (double *) calloc ( NDATA * dim, sizeof(double));
-
-
-    for (i = 0; i < 22; i++)
-        fgets(line,300, fpin);
-
-    i = 0;
-    while (1)
-    {
-        if (fgets(line,300, fpin) ==NULL) break;
-
-        sscanf (line, "%*s%d%d%d%d%d%lf", 
-            &year, &month, &day, &hour, &min, &sec);
+    if_sp3.ignore(2);
+    if_sp3.get(char flag);
     
+    for (i = 0; i < 22; i++)
+//        fgets(line,300, fpin);
+        getline(if_sp3, line);
+
+    while(!if_sp3.eof()) {
+        getline(if_sp3, line);
+        cout << line;
+        istringstream iline(line);
+        iline.ignore(1);
+        iline >> year >> month >> day >> hour >> min >> sec;
         jdi = julian_date ((short)year,(short)month,(short)day,0);
+        gps_i = (int)((jdi - T0) * 86400 + 0.5) + hour * 3600 + min * 60 + sec;
 
-        orb_eph[i*dim] = (int)((jdi - T0) * 86400 + 0.5) + hour * 3600 + min * 60 + sec;
-
-        if (fgets(line,300, fpin) ==NULL) break;
-        sscanf (line, "%*s%lf%lf%lf", 
-            &orb_eph[i * dim + 1],&orb_eph[i * dim + 2],&orb_eph[i * dim + 3]);
-        
-        if (vel == 1)
-        {
-            if (fgets(line,300, fpin) ==NULL) break;
-            sscanf (line, "%*s%lf%lf%lf", 
-                &orb_eph[i * dim + 4],&orb_eph[i * dim + 5],&orb_eph[i * dim + 6]);
+        getline(if_sp3, line);
+        cout << line;
+        istringstream iline(line);
+        iline.ignore(4);
+        iline >> xe[0] >> xe[1] >> xe[2];
+        for (n = 0; n < 3; n ++) xe[n] = xe[n] * 1000;
+    
+        if (flag == 'V') {
+            getline(if_sp3, line);
+            cout << line;
+            istringstream iline(line);
+            iline.ignore(4);
+            iline >> ve[0] >> ve[1] >> ve[2];
+    
+            for (n = 0; n < 3; n ++) ve[n] = ve[n] * 0.1;
+            
         }
-//        printf ("%lf\t%lf\t%lf\t%lf\n",orb_eph[i*4], orb_eph[i * 4 + 1],orb_eph[i * 4 + 2],orb_eph[i * 4 + 3]);
-        i++;
-    }
 
-    printf ("i = %d\t NDATA = %d\n", i, NDATA);
-
-    for (gps_i = GPS_S; gps_i < gps_e; gps_i = gps_i + 5)
-    {
-        if (vel == 0)
-        {
-            lag_deri (orb_eph, i, dim, gps_i, xe, ve);
-            for (n = 0; n < 3; n ++)
-            {
-                xe[n] = xe[n] * 1000;
-                ve[n] = ve[n] * 1000;
-            }
-        }
-        if (vel == 1)
-        {
-            lagrange (orb_eph, i, dim, gps_i, xve);
-            for (n = 0; n < 3; n ++)
-            {
-                xe[n] = xve[n] * 1000;
-                ve[n] = xve[n + 3] * 0.1;
-            }
-        }
 
         tt = gps_i - GPS_S + 19 + 32.184;
         tjd[0] = JD0;    tjd[1] = tt / 86400.0;
-        getinfo (tjd, &info);
+        getinfo (tjd, 2, &info);
 
         brmul(info.c_ei, xe, 3,3,1, xi);
 
-        brmul(info.c_ei, ve, 3,3,1, viv);
-        brmul(info.c_eidot, xe, 3,3,1, vix);
+        if (flag == 'V') {
+            brmul(info.c_ei, ve, 3,3,1, viv);
+            brmul(info.c_eidot, xe, 3,3,1, vix);
+            for (n = 0; n < 3; n ++) vi[n] = viv[n] + vix[n];
+        }
 
-        for (n = 0; n < 3; n ++)
-            vi[n] = viv[n] + vix[n];
+        of_pve << gps_i << xe[0] << xe[1] << xe[2];
+        of_pvi << gps_i << xi[0] << xi[1] << xi[2];
+        if (flag == 'V') {
+            of_pve << gps_i << ve[0] << ve[1] << ve[2];
+            of_pvi << gps_i << vi[0] << vi[1] << vi[2];
+        }
+        of_pve << endl;
+        of_pvi << endl;
 
-        fprintf (fpout1, "%10d X E %20.15lf %20.15lf %20.15lf %20.15lf %20.15lf %20.15lf\n",
-            (int)gps_i, xe[0], xe[1], xe[2], ve[0], ve[1], ve[2]);
-        fprintf (fpout2, "%10d X I %20.15lf %20.15lf %20.15lf %20.15lf %20.15lf %20.15lf\n",
-            (int)gps_i, xi[0], xi[1], xi[2], vi[0], vi[1], vi[2]);
     }
-
-
-
-/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
-
-  
-    fclose(fpin);
-    fclose(fpout1);
-    fclose(fpout2);
     
+    if_std.close();
+    if_sp3.close();
+    of_pve.close();
+    of_pvi.close();
 
-//    printf ("\nNormal end of ECHO!\n\npress any key to finish...\n");
 
-    exit(0);
+    return 0;
 
 }
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
