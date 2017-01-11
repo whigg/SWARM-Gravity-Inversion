@@ -1,7 +1,7 @@
 
 #MODULES = novas coord grvts grace fitgps orb2l1c RELEASE_2010-03-31
 #MODULES = novas coord grvts numrs grace GRACEL1C RELEASE_2010-03-31
-MODULES = novasc coord grvts numrs grace GRACEL1C GraceReadSW 
+MODULES = novasc coord grvts numrs grace SWARML1C
 
 DIR = src
 

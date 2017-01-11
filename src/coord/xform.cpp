@@ -16,7 +16,7 @@
 
         double gps2tt (double gps_sec);
 
-        int eop_open (char *eop_name, int mjd_beg, int mjd_end);
+        int eop_open (char const *eop_name, int mjd_beg, int mjd_end);
 
         int eop_read (double mjdt, double *xp, double *yp, 
             double *ut1_utc, double *dx, double *dy);
@@ -138,7 +138,7 @@ double gps_GRACE2tt (double jd0_day, double gps_GRACE)
       => NEOP = 4 (2,3,4,5)
 */
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
-int eop_open (char *eop_name, int mjd_beg, int mjd_end)
+int eop_open (char const *eop_name, int mjd_beg, int mjd_end)
 {
     FILE *fp_eop;
     int i, mjdi;
@@ -683,7 +683,6 @@ void in2pa(double *jd, double *te)
     center = 0;
 
     dpleph_(jd, &target, &center, lib);
-//    DPLEPH(jd, &target, &center, lib);
 
     rotmatz (lib[0], tb1, 0);
     rotmatx (lib[1], tb2, 0);

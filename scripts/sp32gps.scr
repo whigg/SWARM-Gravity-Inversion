@@ -7,6 +7,18 @@ then
 fi
 
 
+DIR=..
+#DIR=$HOME/my_packages
+
+
+if [ ! $INPUTexe ]; then
+    export INPUTexe=$DIR/bin
+fi
+if [ ! $INPUTdata ]; then
+    export INPUTdata=$DIR/data
+fi
+
+
 #BIN=/0/home/shang.34/bin/src_gnv2gps/main.orb
 BIN=./src_ncu/main.orb
 

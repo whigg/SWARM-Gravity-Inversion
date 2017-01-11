@@ -150,7 +150,7 @@
 
         double gps2tt (double gps_sec);
 
-        int eop_open (char *eop_name, int mjd_beg, int mjd_end);
+        int eop_open (char const *eop_name, int mjd_beg, int mjd_end);
 
         int eop_read (double mjdt, double *xp, double *yp, 
             double *ut1_utc, double *dx, double *dy);
@@ -182,9 +182,12 @@
 
         void me2pa (double *te);
 
-        void dpleph_ (double *tjdtdb, long int *targe, long int *center,
+        extern "C" {    
+            void dpleph_ (double *tjdtdb, long int *targe, long int *center,
                 double *posvel);
+        }
     
+
  
 /*dtdb.c*/
         double iauDtdb(double date1, double date2,
