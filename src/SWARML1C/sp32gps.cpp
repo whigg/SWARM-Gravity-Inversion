@@ -1,150 +1,75 @@
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-#include "main.l1b2orb.h"
 
-#define MAXLINE 300
+#include "coord.h"
+#include "numrs.h"
 
-short int ACCURACY = 1;
 
-int LAG_ORD = 8;
+using namespace std;
 
-int NEOP;
-double *EOPMT;
+
+//#define MAXLINE 300
+
+//short int ACCURACY = 1;
+
+//int LAG_ORD = 8;
+
+//int NEOP;
+//double *EOPMT;
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
-    FILE *fp_stdin, *fpin, *fpout1, *fpout2;	
     int year, month, day, hour, min, days, mjds;
     int gps_e, gps_i, dim, i, n, gpsweek, vel;
-    double jdi, sec, xe[3], ve[3], xve[6], xi[3], vi[3], utc, tt, tjd[2], xi_a[3], vi_a[3], xi_b[3], vi_b[3], llh_a[3], llh_b[3], 
+    double jdi, sec, xe[3], ve[3], xve[6], xi[3], vi[3], utc, tt, 
+        tjd[2], xi_a[3], vi_a[3], xi_b[3], vi_b[3], llh_a[3], llh_b[3], 
         viv[3], vix[3], x_a[3], x_b[3], v_a[3], v_b[3], 
         *gnv_a, *gnv_b, ex_a[9], ev_a[9], ex_b[9], ev_b[9], tmp[9], *orb_eph,
         exi_a[9], evi_a[9], exi_b[9], evi_b[9], eviv_a[9], evix_a[9], eviv_b[9], evix_b[9];
-    char line[MAXLINE];  
-    
-    char card[20], f_gnv1b_a[40], f_gnv1b_b[40], f_gnv1c_a[40], f_gnv1c_b[40], 
-        stdname[100];    
+//    char line[MAXLINE];  
+    string stdname, card, fsp3, fgpsi, fgpse, feop;  
     time_t s0, s1, s2, s3;
     int DT, NDATA, GPS_S;
 
     InfStruct info;
 
-
-	if (argc == 1)
-	{
-		printf ("input file name: ");
-		scanf ("%s", stdname);
-	}
-	else if (argc == 2)
-	{
-		sscanf (argv[1], "%s", stdname);
-	}
-	else
-	{
-        printf ("input argument error!\n");
-        exit (0);
-	}
-    if ( (fp_stdin = fopen (stdname,"r")) == NULL)
-    {
-        printf ("Cannot open stdin file!\n");
-        exit (0);
-    }
-//    printf ("\nreading input file \"%s\"...\n\n", stdname);
-
-    while (feof(fp_stdin) == 0)
-    {
-        card[1] = '\0';
-        fgets (line, MAXLINE, fp_stdin);
-        sscanf (line, "%s", card);	
-
-        if (strcmp (card,"INPUT") ==0)	
-        {
-            sscanf (line, "%*s%s", f_gnv1b_a);	
-        }
-        if (strcmp (card,"OUTPUT") ==0)	
-        {
-            sscanf (line, "%*s%s%s", f_gnv1c_a, f_gnv1c_b);	
-        }
-        if (strcmp (card,"EOP") ==0)	
-        {
-            sscanf (line, "%*s%s", FILE_EOP);	
-        }
-        if (strcmp (card, "YEAR") ==0)	
-        {
-            sscanf (line, "%*s%d", &year);
-        }
-        if (strcmp (card, "MONTH") ==0)
-        {
-            sscanf (line, "%*s%d", &month);
-        }
-        if (strcmp (card, "DAY") ==0)
-        {
-            sscanf (line, "%*s%d", &day);
-        }
-        if (strcmp (card, "DAYS") ==0)
-        {
-            sscanf (line, "%*s%d", &days);
-        }
-
-        if (strcmp (card, "DT") ==0)	
-        {
-            sscanf (line, "%*s%d", &DT);
-        }
-        if (strcmp (card, "VEL") ==0)	
-        {
-            sscanf (line, "%*s%d", &vel);
-        }
-        if (strcmp (card, "ORDER") ==0)	
-        {
-            sscanf (line, "%*s%d", &LAG_ORD);
-        }
-
-
-
+    if (argc < 2) {
+        cout << "Usage: " << argv[0] << " <input file name>" << endl;
+        return EXIT_FAILURE;
     }
 
-
-
-/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
-    if ( (fpin = fopen (f_gnv1b_a,"r")) == NULL)
-    {
-        printf ("Cannot open fpin_a file!\n");
-        exit (0);
+    ifstream if_std, if_sp3;
+    ofstream of_gpsi, of_gpse; 
+    if_std.open(argv[1]); 
+//    ostringstream line;
+//    stringstream sline; 
+    string line;
+    while(!if_std.eof()) {
+        getline(if_std, line);
+        cout << line;
+        istringstream iline(line);
+        iline >> card;
+        if (card == "INPUT") {iline >> fsp3; if_sp3.open(fsp3.c_str()); }
+        if (card == "OUTPUT") {iline >> fgpsi >> fgpse; of_gpsi.open(fgpsi.c_str()); of_gpse.open(fgpse.c_str()); }
+        if (card == "EOP") {iline >> feop;}
+        if (card == "EPOCH") {iline >> year >> month >> day; }
     }
-
-    if ( (fpout1 = fopen (f_gnv1c_a,"w")) == NULL)
-    {
-        printf ("Cannot open fpout_a file!\n");
-        exit (0);
-    }
-    if ( (fpout2 = fopen (f_gnv1c_b,"w")) == NULL)
-    {
-        printf ("Cannot open fpout_b file!\n");
-        exit (0);
-    }
-
-
-/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
-
-
-
-/*interpolation and comparision*/
-
-
-
-//    days = 1;
-
-    JD0 = julian_date ((short)year,(short)month,(short)day,0);
     
 
-    NDATA = days * 86400 / DT;
+    JD0 = julian_date ((short)year,(short)month,(short)day,0);
+
+//    NDATA = days * 86400 / DT;
+
+    mjds = (int)(JD0 - 2400000.5);
+    mjde = mjds + 1;
+    eop_open (feop, mjds - 1, mjde + 1);
 
 
-    mjds = (int)(JD0 - 2400000.5 ) - 2;
-    NEOP = (int)(JD0 - 2400000.5 + days - mjds) + 3;
 
-    EOPMT  = (double *) calloc (NEOP * 6, sizeof(double));
-    openeop (FILE_EOP, mjds, NEOP, EOPMT);
 
 
     GPS_S = (int)((JD0 - T0) * 86400 + 0.5);
