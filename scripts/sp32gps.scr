@@ -33,17 +33,20 @@ epoch=$year$month$day
 let "epoch -=1"
 echo $epoch
 
-input=$epoch.sp3
-outputi=$epoch.icf
-outpute=$epoch.itf
-unzip $INPUTdata/orbit/esa/RD/Sat_$N/SW_OPER_SP3ACOM__"$epoch"* -d .
-mv SW_OPER_SP3ACOM__"$epoch"*DBL $input
-rm SW_OPER_SP3ACOM__"$epoch"*HDR
+epoch1=$year-$month-"$day"_$N
+
+echo $epoch1
+input=$epoch1.sp3
+outputi=$epoch1.icf
+outpute=$epoch1.itf
+unzip -d . $INPUTdata/orbit/esa/RD/Sat_$N/SW_OPER_SP3ACOM_2__"$epoch"*
+mv SW_OPER_SP3ACOM_2__"$epoch"*DBL $input
+rm SW_OPER_SP3ACOM_2__"$epoch"*HDR
 
 
 
-FLEOP=$INPUTdata/eopc04_08_IAU2000.62-now
-
+#FLEOP=$INPUTdata/eopc04_08_IAU2000.62-now
+FLEOP=/0/home/shang.34/inputs/eopc04_08_IAU2000.62-now
 
 EXE=$INPUTexe/sp32gps.e
 
@@ -55,7 +58,7 @@ cat << PARAMEND1 > $PARAM
   Everybody Can Have Orbit: Global Set Option Cards                             
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+--*/
 INPUT     $input
-OUTPUT    $outputi $outputi
+OUTPUT    $outputi $outpute
 EOP       $FLEOP
 EPOCH     $year $month $day
 PARAMEND1
