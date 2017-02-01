@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ $# -lt 4 ]
+if [ $# -lt 3 ]
 then
-  echo "usage: $0 year month day fit(0/1)"
+  echo "usage: $0 year month day"
   exit
 fi
 
